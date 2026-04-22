@@ -18,13 +18,17 @@ Your Target: A simple baseline model (k-Nearest Neighbors / Random Forest) has
 📅 Timeline & Final Deliverables
 
 Competition Deadline: The competition will officially close at the end of April.
-Required Deliverables: Beating the baseline on Kaggle is only half the task! You must email the following materials to bogdan.dura@ici.ro and sebastian.balmus@ici.ro before the competition deadline:
+Required Deliverables: Beating the baseline on Kaggle is only half the task! You must email the following materials 
+to *********** and **************  before the competition deadline:
 Your Source Code: The .py or Jupyter Notebook used to train your best model.
-Project Documentation (PDF): A report explaining your workflow. This must include your Data Analysis, Preprocessing steps (e.g., how you extracted MFCCs or Spectrograms), the models you experimented with, and a comparison between your final model and the official baseline.
+Project Documentation (PDF): A report explaining your workflow.
+ This must include your Data Analysis, Preprocessing steps (e.g., how you extracted MFCCs or Spectrograms), 
+ the models you experimented with, and a comparison between your final model and the official baseline.
 🚀 Getting Started & GPU Resources
 
 1. Start Simple (CPU) Before jumping into complex neural networks, 
-we highly recommend experimenting first with traditional Machine Learning models using scikit-learn (just like the provided baseline). 
+we highly recommend experimenting first with traditional 
+Machine Learning models using scikit-learn (just like the provided baseline). 
 These models train very fast on a standard laptop CPU and are the best way to test out your initial feature engineering (like tweaking your MFCC parameters).
 
 2. Scaling Up (GPU) Once you are ready to experiment with Deep Learning architectures (like running Convolutional Neural Networks on audio spectrograms), 
