@@ -1,7 +1,6 @@
-flask
-librosa
-matplotlib
 torch
-tqdm
+librosa
+numpy
 torchlibrosa
+matplotlib
 seaborn
