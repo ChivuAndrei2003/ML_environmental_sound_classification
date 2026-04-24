@@ -1,0 +1,3 @@
+{
+  "python.analysis.extraPaths": ["./audioset_tagging_cnn/pytorch"]
+}
