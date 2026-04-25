@@ -51,6 +51,13 @@ coverage.xml
 .pytest_cache/
 cover/
 
+# Model checkpoints and generated training artifacts
+*.pth
+*.pt
+*.ckpt
+pretrained/
+submission.csv
+
 # Translations
 *.mo
 *.pot

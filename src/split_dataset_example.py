@@ -1,81 +1,54 @@
 #!/usr/bin/env python3
-"""
-Example script demonstrating how to use SplitAudioFolderDataset to load audio samples
-from labeled folders and split them into train/eval/test sets.
-"""
+from pathlib import Path
 
-import os
-from AudioFolderDataset import SplitAudioFolderDataset
+import pandas as pd
+from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
+
+from AudioFolderDataset import CSVAudioDataset
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+TRAIN_CSV = PROJECT_ROOT / "DATA" / "train_audio" / "train.csv"
+TRAIN_AUDIO_DIR = PROJECT_ROOT / "DATA" / "train_audio"
 
 
 def main():
-    # Path to directory containing labeled audio samples
-    # Structure should be:
-    # data/
-    #   ├── label1/
-    #   │   ├── sample1.wav
-    #   │   ├── sample2.wav
-    #   │   └── ...
-    #   ├── label2/
-    #   │   ├── sample1.wav
-    #   │   └── ...
-    #   └── ...
-    data_dir = "./data"
-
-    # Check if directory exists
-    if not os.path.exists(data_dir):
-        print(
-            f"Directory {data_dir} does not exist. Please create it and add labeled audio samples."
-        )
-        print("Expected structure: data/label1/, data/label2/, etc.")
-        return
-
-    # Create datasets with automatic 70/20/10 splitting
-    print("Creating train/eval/test splits with 70%/20%/10% ratio...")
-    train_dataset = SplitAudioFolderDataset(
-        data_dir, target_sr=16000, split_type="train"
+    df = pd.read_csv(TRAIN_CSV)
+    train_idx, val_idx = train_test_split(
+        range(len(df)),
+        test_size=0.2,
+        random_state=42,
+        stratify=df["target"],
     )
-    eval_dataset = SplitAudioFolderDataset(data_dir, target_sr=16000, split_type="eval")
-    test_dataset = SplitAudioFolderDataset(data_dir, target_sr=16000, split_type="test")
 
-    # Create dataloaders
-    batch_size = 8
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    eval_loader = DataLoader(eval_dataset, batch_size=batch_size, shuffle=False)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+    train_dataset = CSVAudioDataset(
+        TRAIN_AUDIO_DIR,
+        TRAIN_CSV,
+        target_sr=16000,
+        has_labels=True,
+        indices=train_idx,
+    )
+    val_dataset = CSVAudioDataset(
+        TRAIN_AUDIO_DIR,
+        TRAIN_CSV,
+        target_sr=16000,
+        has_labels=True,
+        indices=val_idx,
+    )
 
-    # Print dataset information
-    print("\nDataset Information:")
-    print(f"Classes: {train_dataset.label_to_idx}")
-    print(f"Train size: {len(train_dataset)} samples")
-    print(f"Eval size: {len(eval_dataset)} samples")
-    print(f"Test size: {len(test_dataset)} samples")
+    train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=8, shuffle=False)
 
-    total_samples = len(train_dataset) + len(eval_dataset) + len(test_dataset)
-    print(f"Total samples: {total_samples}")
+    print(f"Train samples: {len(train_dataset)}")
+    print(f"Validation samples: {len(val_dataset)}")
+    print(f"Train batches: {len(train_loader)}")
+    print(f"Validation batches: {len(val_loader)}")
 
-    # Calculate actual split percentages
-    train_pct = len(train_dataset) / total_samples
-    eval_pct = len(eval_dataset) / total_samples
-    test_pct = len(test_dataset) / total_samples
-    print(f"Actual split ratio: {train_pct:.1%}/{eval_pct:.1%}/{test_pct:.1%}")
-
-    # Print class distribution in each split
-    print("\nClass distribution:")
-    for split_name, dataset in [
-        ("Train", train_dataset),
-        ("Eval", eval_dataset),
-        ("Test", test_dataset),
-    ]:
-        class_counts = {}
-        for label in dataset.labels:
-            label_name = dataset.idx_to_label[label]
-            class_counts[label_name] = class_counts.get(label_name, 0) + 1
-
-        print(f"{split_name} split:")
-        for label, count in class_counts.items():
-            print(f"  - {label}: {count} samples ({count/len(dataset):.1%})")
+    print("\nClass counts:")
+    for target, count in df["target"].value_counts().sort_index().items():
+        category = df.loc[df["target"] == target, "category"].iloc[0]
+        print(f"{target:02d} {category}: {count}")
 
 
 if __name__ == "__main__":

@@ -4,3 +4,5 @@ numpy
 torchlibrosa
 matplotlib
 seaborn
+pandas
+scikit-learn
