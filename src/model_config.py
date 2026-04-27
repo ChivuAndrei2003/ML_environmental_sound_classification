@@ -8,7 +8,7 @@ PANNS_REPO_PATH = PROJECT_ROOT / "audioset_tagging_cnn" / "pytorch"
 if str(PANNS_REPO_PATH) not in sys.path:
     sys.path.append(str(PANNS_REPO_PATH))
 
-  # noqa: E402
+# noqa: E402
 
 
 TRAIN_CSV = PROJECT_ROOT / "DATA" / "train_audio" / "train.csv"
@@ -19,7 +19,7 @@ TEST_AUDIO_DIR = PROJECT_ROOT / "DATA" / "test_audio"
 TARGET_SR = 16000
 BATCH_SIZE = 8
 NUM_EPOCHS = 100
-PATIENCE = 30
+PATIENCE = 15
 NUM_CLASSES = 50
 FREEZE_PANNS = True
 UNFREEZE_LAST_LAYERS = 3

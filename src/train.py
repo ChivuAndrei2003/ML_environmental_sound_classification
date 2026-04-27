@@ -1,4 +1,5 @@
 import copy
+
 # import sys
 from datetime import datetime
 from pathlib import Path
@@ -13,6 +14,7 @@ from torch.utils.data import DataLoader
 from AudioFolderDataset import CSVAudioDataset
 from model_config import *
 from models import Cnn14
+
 
 class PodFineTunedClassifier(nn.Module):
     """PANNs Cnn14 encoder with a task-specific classification head."""
@@ -123,7 +125,9 @@ def build_datasets():
 def build_optimizer(model):
     pretrained_lr = 5e-6
     head_lr = 5e-4
-
+    # pretrained_lr = 1e-6 | fol.la experiments/panns_frozen3_unfreeze3_20260427_162829_submission.csv
+    # head_lr = 3e-4  | fol.la experiments/panns_frozen3_unfreeze3_20260427_162829_submission.csv
+    # cu PATIENCE = 15
     return torch.optim.Adam(
         [
             {
