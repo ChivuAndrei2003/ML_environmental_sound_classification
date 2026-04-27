@@ -1,5 +1,6 @@
 import copy
-import sys
+# import sys
+from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
@@ -10,34 +11,8 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 
 from AudioFolderDataset import CSVAudioDataset
-
-
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-PANNS_REPO_PATH = PROJECT_ROOT / "audioset_tagging_cnn" / "pytorch"
-
-if str(PANNS_REPO_PATH) not in sys.path:
-    sys.path.append(str(PANNS_REPO_PATH))
-
-from models import Cnn14  # noqa: E402
-
-
-TRAIN_CSV = PROJECT_ROOT / "DATA" / "train_audio" / "train.csv"
-TRAIN_AUDIO_DIR = PROJECT_ROOT / "DATA" / "train_audio"
-TEST_CSV = PROJECT_ROOT / "DATA" / "test_audio" / "test.csv"
-TEST_AUDIO_DIR = PROJECT_ROOT / "DATA" / "test_audio"
-
-TARGET_SR = 16000
-BATCH_SIZE = 8
-NUM_EPOCHS = 100
-PATIENCE = 30
-NUM_CLASSES = 50
-
-# Download the matching PANNs checkpoint and update this path before training.
-PANNS_WEIGHTS_PATH = PROJECT_ROOT / "pretrained" / "Cnn14_16k_mAP=0.438.pth"
-BEST_MODEL_PATH = PROJECT_ROOT / "pod_finetuned_classifier_best.pth"
-FINAL_MODEL_PATH = PROJECT_ROOT / "pod_finetuned_classifier.pth"
-SUBMISSION_PATH = PROJECT_ROOT / "submission.csv"
-
+from model_config import *
+from models import Cnn14
 
 class PodFineTunedClassifier(nn.Module):
     """PANNs Cnn14 encoder with a task-specific classification head."""
@@ -52,7 +27,9 @@ class PodFineTunedClassifier(nn.Module):
     ):
         super().__init__()
 
-        self.device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+        self.device = torch.device(
+            "mps" if torch.backends.mps.is_available() else "cpu"
+        )
         print(f"Using device: {self.device}")
 
         self.panns_model = Cnn14(
@@ -86,9 +63,8 @@ class PodFineTunedClassifier(nn.Module):
             param.requires_grad = not freeze_panns
 
         if freeze_panns and unfreeze_last_layers > 0:
-            layers = ["conv_block6", "conv_block5", "conv_block4"][
-                :unfreeze_last_layers
-            ]
+            layers = PANNS_TRAINABLE_BLOCKS[:unfreeze_last_layers]
+
             for name, param in self.panns_model.named_parameters():
                 if any(layer in name for layer in layers):
                     param.requires_grad = True
@@ -160,7 +136,9 @@ def build_optimizer(model):
             },
             {
                 "params": [
-                    p for name, p in model.named_parameters() if "panns_model" not in name
+                    p
+                    for name, p in model.named_parameters()
+                    if "panns_model" not in name
                 ],
                 "lr": head_lr,
             },
@@ -215,6 +193,10 @@ def save_checkpoint(path, model, label_to_idx, idx_to_label, best_eval_acc, epoc
         "label_to_idx": label_to_idx,
         "idx_to_label": idx_to_label,
         "best_eval_acc": best_eval_acc,
+        "experiment_name": EXPERIMENT_NAME,
+        "freeze_panns": FREEZE_PANNS,
+        "unfreeze_last_layers": UNFREEZE_LAST_LAYERS,
+        "frozen_panns_blocks": FROZEN_PANNS_BLOCKS,
     }
     if epoch is not None:
         checkpoint["epoch"] = epoch
@@ -244,6 +226,11 @@ def main():
             f"Missing PANNs checkpoint: {PANNS_WEIGHTS_PATH}. "
             "Download it or update PANNS_WEIGHTS_PATH."
         )
+    EXPERIMENTS_DIR.mkdir(parents=True, exist_ok=True)
+    print(f"Experiment name: {EXPERIMENT_NAME}")
+    print(f"Best checkpoint path: {BEST_MODEL_PATH}")
+    print(f"Final checkpoint path: {FINAL_MODEL_PATH}")
+    print(f"Submission path: {SUBMISSION_PATH}")
 
     (
         train_dataset,
@@ -265,8 +252,8 @@ def main():
     model = PodFineTunedClassifier(
         num_classes=NUM_CLASSES,
         panns_weights_path=PANNS_WEIGHTS_PATH,
-        freeze_panns=True,
-        unfreeze_last_layers=3,
+        freeze_panns=FREEZE_PANNS,
+        unfreeze_last_layers=UNFREEZE_LAST_LAYERS,
     )
     criterion = nn.CrossEntropyLoss()
     optimizer = build_optimizer(model)
